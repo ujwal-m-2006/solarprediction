@@ -210,6 +210,15 @@
 <script>
 async function loadReport() {
   const errorBanner = document.getElementById('error-banner');
+
+  if (window.location.protocol === 'file:') {
+    errorBanner.style.display = 'block';
+    errorBanner.textContent = 'This page was opened directly as a local file, which browsers block from ' +
+      'loading outputs/report.json. Serve it over HTTP instead, e.g. run "python3 -m http.server 8531" ' +
+      'in this folder and open http://localhost:8531/ — then reload.';
+    return;
+  }
+
   try {
     const res = await fetch('outputs/report.json', { cache: 'no-store' });
     if (!res.ok) throw new Error('report.json not found (HTTP ' + res.status + ')');
