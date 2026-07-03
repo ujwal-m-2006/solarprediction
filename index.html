@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solar Flare / CME Prediction Dashboard</title>
+<style>
+  :root {
+    --bg: #0b0f1a;
+    --panel: #131a2a;
+    --panel-border: #232d45;
+    --text: #e7ecf5;
+    --muted: #8b96ad;
+    --accent: #f4c542;
+    --accent-m: #e8703a;
+    --accent-x: #c0392b;
+    --good: #4caf7d;
+    --warn: #e8703a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: radial-gradient(circle at top, #10192f 0%, #05070d 70%);
+    color: var(--text);
+    font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    padding: 32px 24px 64px;
+  }
+  header {
+    max-width: 1100px;
+    margin: 0 auto 28px;
+  }
+  h1 {
+    font-size: 1.6rem;
+    margin: 0 0 4px;
+    letter-spacing: 0.02em;
+  }
+  .subtitle {
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+  .meta-bar {
+    max-width: 1100px;
+    margin: 0 auto 24px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+  .pill {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 999px;
+    padding: 4px 12px;
+  }
+  .pill.live { color: var(--good); border-color: #234; }
+  .pill.fallback { color: var(--warn); border-color: #432; }
+  .grid {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 18px;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 12px;
+    padding: 18px 20px;
+  }
+  .card h2 {
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin: 0 0 14px;
+  }
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px dashed #1e2740;
+    font-size: 0.92rem;
+  }
+  .stat-row:last-child { border-bottom: none; }
+  .stat-row .label { color: var(--muted); }
+  .stat-row .value { font-weight: 600; }
+  .wide { grid-column: 1 / -1; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.86rem;
+  }
+  th, td {
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid #1e2740;
+  }
+  th { color: var(--muted); font-weight: 500; text-transform: uppercase; font-size: 0.72rem; letter-spacing: 0.05em; }
+  .bar-cell { display: flex; align-items: center; gap: 6px; }
+  .bar-track { flex: 1; height: 6px; background: #1e2740; border-radius: 4px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; }
+  .bar-fill.c { background: var(--accent); }
+  .bar-fill.m { background: var(--accent-m); }
+  .bar-fill.x { background: var(--accent-x); }
+  .noaa-compare { color: var(--muted); font-size: 0.78rem; }
+  img.chart {
+    width: 100%;
+    border-radius: 10px;
+    border: 1px solid var(--panel-border);
+    margin-top: 8px;
+    background: #fff;
+  }
+  .outlook-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.76rem;
+    background: #1e2740;
+    color: var(--text);
+  }
+  .limitations {
+    font-size: 0.82rem;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+  footer {
+    max-width: 1100px;
+    margin: 40px auto 0;
+    color: var(--muted);
+    font-size: 0.75rem;
+    text-align: center;
+  }
+  #error-banner {
+    display: none;
+    max-width: 1100px;
+    margin: 0 auto 20px;
+    background: #3a1f1f;
+    border: 1px solid #5c2b2b;
+    color: #f5b7b1;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Solar Flare / CME Prediction Dashboard</h1>
+  <div class="subtitle">Live NOAA SWPC data + drag-based CME arrival model + McIntosh flare-probability model</div>
+</header>
+
+<div id="error-banner"></div>
+<div class="meta-bar" id="meta-bar"></div>
+
+<div class="grid" id="grid">
+  <div class="card">
+    <h2>Solar Wind (L1, near-Earth)</h2>
+    <div id="solar-wind-stats"></div>
+  </div>
+
+  <div class="card">
+    <h2>Geomagnetic State</h2>
+    <div id="geo-stats"></div>
+  </div>
+
+  <div class="card wide">
+    <h2>Top Flare-Risk Active Regions (next 24h)</h2>
+    <table id="region-table">
+      <thead>
+        <tr><th>Region</th><th>Loc</th><th>McIntosh</th><th>Mag</th><th>C-class</th><th>M-class</th><th>X-class</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="card wide">
+    <img class="chart" src="outputs/flare_probability_by_region.png" alt="Flare probability by region">
+  </div>
+
+  <div class="card wide">
+    <h2>Recent M/X Flares &rarr; Estimated CME Earth-Arrival</h2>
+    <table id="cme-table">
+      <thead>
+        <tr><th>Flare</th><th>Peak Time (UTC)</th><th>Est. CME v0</th><th>Arrival Window</th><th>Arrival Speed</th><th>Outlook</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="card wide">
+    <img class="chart" src="outputs/cme_arrival_timeline.png" alt="CME arrival timeline">
+  </div>
+
+  <div class="card wide">
+    <h2>Limitations</h2>
+    <div class="limitations">
+      CME initial speed is estimated from flare GOES class (CDAW-catalog statistics), not measured by coronagraph &mdash; treat transit times as order-of-magnitude, not precise forecasts.
+      No model can predict the exact moment a region will flare.
+      Storm severity depends heavily on IMF Bz, which is only reliably knowable once a CME sheath reaches L1, roughly 30&ndash;60 minutes before Earth impact &mdash; a physical limit of the observing geometry, not a modeling gap.
+    </div>
+  </div>
+</div>
+
+<footer>
+  Data: NOAA Space Weather Prediction Center &middot; Model: Drag-Based Model (Vr&scaron;nak et al. 2013) + McIntosh/Mount Wilson flare-probability table
+</footer>
+
+<script>
+async function loadReport() {
+  const errorBanner = document.getElementById('error-banner');
+  try {
+    const res = await fetch('outputs/report.json', { cache: 'no-store' });
+    if (!res.ok) throw new Error('report.json not found (HTTP ' + res.status + ')');
+    const report = await res.json();
+    render(report);
+  } catch (err) {
+    errorBanner.style.display = 'block';
+    errorBanner.textContent = 'Could not load outputs/report.json — run "python3 src/report.py" first, then reload. (' + err.message + ')';
+  }
+}
+
+function pct(v) { return (v === null || v === undefined) ? '—' : v.toFixed(1) + '%'; }
+
+function render(report) {
+  const metaBar = document.getElementById('meta-bar');
+  metaBar.innerHTML = `<span class="pill">Generated ${new Date(report.generated_at).toLocaleString()}</span>` +
+    Object.entries(report.data_sources).map(([name, src]) =>
+      `<span class="pill ${src}">${name}: ${src}</span>`).join('');
+
+  const sw = report.solar_wind;
+  document.getElementById('solar-wind-stats').innerHTML = `
+    <div class="stat-row"><span class="label">Speed</span><span class="value">${sw.ambient_speed_kms ?? '—'} km/s</span></div>
+    <div class="stat-row"><span class="label">Density</span><span class="value">${sw.density_p_cm3 ?? '—'} p/cm³</span></div>
+    <div class="stat-row"><span class="label">Temperature</span><span class="value">${sw.temperature_k ? sw.temperature_k.toLocaleString() : '—'} K</span></div>
+    <div class="stat-row"><span class="label">IMF Bt</span><span class="value">${sw.bt_nt ?? '—'} nT</span></div>
+    <div class="stat-row"><span class="label">IMF Bz (GSM)</span><span class="value">${sw.bz_gsm_nt ?? '—'} nT</span></div>
+    <div class="stat-row"><span class="label">Sample time</span><span class="value">${sw.sample_time ?? '—'}</span></div>
+  `;
+
+  const geo = report.geomagnetic;
+  document.getElementById('geo-stats').innerHTML = `
+    <div class="stat-row"><span class="label">Planetary Kp</span><span class="value">${geo.kp_index ?? '—'}</span></div>
+    <div class="stat-row"><span class="label">Estimated Kp</span><span class="value">${geo.kp_estimated ?? '—'}</span></div>
+    <div class="stat-row"><span class="label">Sample time</span><span class="value">${geo.sample_time ?? '—'}</span></div>
+  `;
+
+  const regionBody = document.querySelector('#region-table tbody');
+  regionBody.innerHTML = report.top_flare_risk_regions.map(r => {
+    const b = r.blended_estimate_pct, n = r.noaa_official_pct;
+    const bar = (val, cls) => `<div class="bar-cell"><div class="bar-track"><div class="bar-fill ${cls}" style="width:${Math.min(100, val || 0)}%"></div></div><span>${pct(val)}</span></div>`;
+    return `<tr>
+      <td>AR${r.region}</td>
+      <td>${r.location}</td>
+      <td>${r.spot_class ?? '—'}</td>
+      <td>${r.mag_class ?? '—'}</td>
+      <td>${bar(b.C, 'c')}<div class="noaa-compare">NOAA: ${n.C}%</div></td>
+      <td>${bar(b.M, 'm')}<div class="noaa-compare">NOAA: ${n.M}%</div></td>
+      <td>${bar(b.X, 'x')}<div class="noaa-compare">NOAA: ${n.X}%</div></td>
+    </tr>`;
+  }).join('');
+
+  const cmeBody = document.querySelector('#cme-table tbody');
+  cmeBody.innerHTML = report.recent_mx_flares_cme_arrival.map(c => {
+    const a = c.arrival;
+    const window = a.transit_hours_best !== null
+      ? `${a.transit_hours_best}h [${a.transit_hours_low}–${a.transit_hours_high}h]`
+      : (a.note || 'no solution');
+    return `<tr>
+      <td>${c.flare_class}</td>
+      <td>${c.flare_peak_time}</td>
+      <td>${c.estimated_cme_speed_kms ?? '—'} km/s</td>
+      <td>${window}</td>
+      <td>${a.arrival_speed_kms ?? '—'} km/s</td>
+      <td><span class="outlook-tag">${c.geomagnetic_outlook}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+loadReport();
+</script>
+
+</body>
+</html>
