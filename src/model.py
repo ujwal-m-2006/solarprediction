@@ -35,6 +35,24 @@ def estimate_cme_speed_kms(flare_class_str):
     return None
 
 
+def _age_hours(time_tag, now):
+    """
+    Hours between a NOAA time_tag (naive UTC string, no offset) and now.
+    NOAA's real-time solar wind feed is nominally updated every minute but
+    can silently stall for hours (spacecraft/ground-station gaps) while
+    still returning HTTP 200 -- a stale-but-"live" response looks
+    identical to fresh data unless the payload's own last timestamp is
+    checked against wall-clock time.
+    """
+    if not time_tag:
+        return None
+    try:
+        t = datetime.fromisoformat(time_tag).replace(tzinfo=timezone.utc)
+    except ValueError:
+        return None
+    return (now - t).total_seconds() / 3600.0
+
+
 def latest_active(records, speed_field, extra_fields=()):
     """Most recent record with a non-null speed field and active=True."""
     candidates = [r for r in records if r.get("active") and r.get(speed_field) is not None]
@@ -61,8 +79,30 @@ def build_report():
 
     flares = data["xray_flares"]
     mx_flares = [f for f in flares if f.get("max_class", "").startswith(("M", "X"))]
-    mx_flares.sort(key=lambda f: f["max_time"], reverse=True)
-    recent_mx = mx_flares[:5]
+
+    def _flare_magnitude(f):
+        cls = f.get("max_class", "")
+        try:
+            return float(cls[1:])
+        except (ValueError, IndexError):
+            return 0.0
+
+    # Recency alone can silently drop the flare that actually matters: an
+    # X-class (or big M-class) event from days ago is still the dominant
+    # geoeffective driver while its CME is in transit, even if a dozen
+    # smaller M1-class flares have happened more recently. So: always keep
+    # every X-class and M5+ flare in the window, then top up with the most
+    # recent remaining flares up to 5 total.
+    significant = [f for f in mx_flares
+                   if f["max_class"].startswith("X") or _flare_magnitude(f) >= 5]
+    significant.sort(key=lambda f: f["max_time"], reverse=True)
+
+    remaining = [f for f in mx_flares if f not in significant]
+    remaining.sort(key=lambda f: f["max_time"], reverse=True)
+
+    recent_mx = significant + remaining
+    recent_mx = recent_mx[:max(5, len(significant))]
+    recent_mx.sort(key=lambda f: f["max_time"], reverse=True)
 
     cme_predictions = []
     for flare in recent_mx:
@@ -77,8 +117,12 @@ def build_report():
             "geomagnetic_outlook": storm,
         })
 
+    now = datetime.now(timezone.utc)
+    plasma_age_hours = _age_hours(plasma.get("time_tag") if plasma else None, now)
+    STALE_THRESHOLD_HOURS = 3.0
+
     report = {
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": now.isoformat(),
         "data_sources": sources,
         "solar_wind": {
             "ambient_speed_kms": ambient_speed,
@@ -87,6 +131,8 @@ def build_report():
             "bt_nt": mag.get("bt") if mag else None,
             "bz_gsm_nt": bz,
             "sample_time": plasma.get("time_tag") if plasma else None,
+            "data_age_hours": round(plasma_age_hours, 1) if plasma_age_hours is not None else None,
+            "stale": plasma_age_hours is not None and plasma_age_hours > STALE_THRESHOLD_HOURS,
         },
         "geomagnetic": {
             "kp_index": latest_kp.get("kp_index") if latest_kp else None,

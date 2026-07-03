@@ -37,6 +37,9 @@ def format_text_report(report):
     lines.append(f"  IMF Bt:       {sw['bt_nt']} nT")
     lines.append(f"  IMF Bz (GSM): {sw['bz_gsm_nt']} nT")
     lines.append(f"  Sample time:  {sw['sample_time']}")
+    if sw.get("stale"):
+        lines.append(f"  *** STALE: this data is {sw['data_age_hours']}h old - NOAA's real-time feed")
+        lines.append(f"      appears to have stalled. Treat solar wind / Bz values below with caution.")
 
     geo = report["geomagnetic"]
     lines.append("\nGEOMAGNETIC STATE")

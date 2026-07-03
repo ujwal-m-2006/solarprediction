@@ -237,6 +237,7 @@ function render(report) {
     <div class="stat-row"><span class="label">IMF Bt</span><span class="value">${sw.bt_nt ?? '—'} nT</span></div>
     <div class="stat-row"><span class="label">IMF Bz (GSM)</span><span class="value">${sw.bz_gsm_nt ?? '—'} nT</span></div>
     <div class="stat-row"><span class="label">Sample time</span><span class="value">${sw.sample_time ?? '—'}</span></div>
+    ${sw.stale ? `<div class="stat-row" style="border-bottom:none;"><span class="value" style="color:var(--warn)">⚠ Data is ${sw.data_age_hours}h old — NOAA feed appears stalled</span></div>` : ''}
   `;
 
   const geo = report.geomagnetic;
