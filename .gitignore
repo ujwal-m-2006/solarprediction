@@ -1,6 +1,7 @@
 __pycache__/
 *.pyc
 .env
+.scratch/
 outputs/*.png
 outputs/report.json
 outputs/report.txt
