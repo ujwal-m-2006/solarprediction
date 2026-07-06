@@ -6,46 +6,96 @@
 <title>Solar Flare / CME Prediction Dashboard</title>
 <style>
   :root {
-    --bg: #0b0f1a;
-    --panel: #131a2a;
-    --panel-border: #232d45;
-    --text: #e7ecf5;
-    --muted: #8b96ad;
-    --accent: #f4c542;
+    --bg: #eef1f5;
+    --panel: #ffffff;
+    --panel-border: #d7dee6;
+    --text: #16233c;
+    --muted: #5b6b82;
+    --navy: #0b2a52;
+    --navy-dark: #071b36;
+    --saffron: #ff9933;
+    --green: #128807;
+    --accent-c: #f4c542;
     --accent-m: #e8703a;
     --accent-x: #c0392b;
-    --good: #4caf7d;
-    --warn: #e8703a;
+    --good: #128807;
+    --warn: #c0392b;
   }
   * { box-sizing: border-box; }
   body {
     margin: 0;
-    background: radial-gradient(circle at top, #10192f 0%, #05070d 70%);
+    background: var(--bg);
     color: var(--text);
     font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-    padding: 32px 24px 64px;
   }
-  header {
-    max-width: 1100px;
-    margin: 0 auto 28px;
+
+  /* ---- Masthead (real ISRO banner) ---- */
+  .masthead { background: #000; text-align: center; }
+  .masthead img { width: 100%; max-width: 1600px; height: auto; display: block; margin: 0 auto; }
+  .tricolor-stripe { height: 4px; background: linear-gradient(to right, var(--saffron) 33.3%, #ffffff 33.3% 66.6%, var(--green) 66.6%); }
+
+  /* ---- Site title bar ---- */
+  .site-title-bar {
+    background: var(--navy);
+    color: #fff;
+    padding: 14px 24px;
   }
-  h1 {
-    font-size: 1.6rem;
-    margin: 0 0 4px;
+  .site-title-bar .inner { max-width: 1200px; margin: 0 auto; }
+  .site-title-bar h1 { font-size: 1.4rem; margin: 0 0 2px; font-weight: 600; }
+  .site-title-bar .subtitle { font-size: 0.85rem; color: #b9c6da; }
+
+  /* ---- Disclaimer ---- */
+  .disclaimer {
+    max-width: 1200px;
+    margin: 14px auto 0;
+    padding: 10px 16px;
+    background: #fff4e0;
+    border: 1px solid #f0c987;
+    border-radius: 6px;
+    color: #6b4a10;
+    font-size: 0.8rem;
+    line-height: 1.5;
+  }
+
+  /* ---- Tab navigation ---- */
+  .tab-nav {
+    background: var(--navy-dark);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .tab-nav .inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+  }
+  .tab-btn {
+    background: none;
+    border: none;
+    color: #cdd8e8;
+    padding: 12px 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
     letter-spacing: 0.02em;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    font-family: inherit;
   }
-  .subtitle {
-    color: var(--muted);
-    font-size: 0.9rem;
-  }
+  .tab-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
+  .tab-btn.active { color: #fff; border-bottom-color: var(--saffron); }
+
+  main { max-width: 1200px; margin: 0 auto; padding: 20px 16px 60px; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
   .meta-bar {
-    max-width: 1100px;
-    margin: 0 auto 24px;
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
     font-size: 0.8rem;
     color: var(--muted);
+    margin-bottom: 20px;
   }
   .pill {
     background: var(--panel);
@@ -53,11 +103,10 @@
     border-radius: 999px;
     padding: 4px 12px;
   }
-  .pill.live { color: var(--good); border-color: #234; }
-  .pill.fallback { color: var(--warn); border-color: #432; }
+  .pill.live { color: var(--good); border-color: #bfe3b8; }
+  .pill.fallback { color: var(--warn); border-color: #f0bcb3; }
+
   .grid {
-    max-width: 1100px;
-    margin: 0 auto;
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     gap: 18px;
@@ -65,48 +114,44 @@
   .card {
     background: var(--panel);
     border: 1px solid var(--panel-border);
-    border-radius: 12px;
+    border-radius: 10px;
     padding: 18px 20px;
+    box-shadow: 0 1px 3px rgba(20,30,50,0.06);
   }
   .card h2 {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: var(--muted);
+    color: var(--navy);
     margin: 0 0 14px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--saffron);
+    display: inline-block;
   }
   .stat-row {
     display: flex;
     justify-content: space-between;
     padding: 6px 0;
-    border-bottom: 1px dashed #1e2740;
+    border-bottom: 1px dashed var(--panel-border);
     font-size: 0.92rem;
   }
   .stat-row:last-child { border-bottom: none; }
   .stat-row .label { color: var(--muted); }
   .stat-row .value { font-weight: 600; }
   .wide { grid-column: 1 / -1; }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.86rem;
-  }
-  th, td {
-    text-align: left;
-    padding: 8px 10px;
-    border-bottom: 1px solid #1e2740;
-  }
-  th { color: var(--muted); font-weight: 500; text-transform: uppercase; font-size: 0.72rem; letter-spacing: 0.05em; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--panel-border); }
+  th { color: var(--muted); font-weight: 600; text-transform: uppercase; font-size: 0.72rem; letter-spacing: 0.05em; }
   .bar-cell { display: flex; align-items: center; gap: 6px; }
-  .bar-track { flex: 1; height: 6px; background: #1e2740; border-radius: 4px; overflow: hidden; }
+  .bar-track { flex: 1; height: 6px; background: #e7ecf2; border-radius: 4px; overflow: hidden; }
   .bar-fill { height: 100%; border-radius: 4px; }
-  .bar-fill.c { background: var(--accent); }
+  .bar-fill.c { background: var(--accent-c); }
   .bar-fill.m { background: var(--accent-m); }
   .bar-fill.x { background: var(--accent-x); }
   .noaa-compare { color: var(--muted); font-size: 0.78rem; }
   img.chart {
     width: 100%;
-    border-radius: 10px;
+    border-radius: 8px;
     border: 1px solid var(--panel-border);
     margin-top: 8px;
     background: #fff;
@@ -116,110 +161,201 @@
     padding: 2px 8px;
     border-radius: 6px;
     font-size: 0.76rem;
-    background: #1e2740;
+    background: #eef1f5;
     color: var(--text);
+    border: 1px solid var(--panel-border);
   }
-  .limitations {
-    font-size: 0.82rem;
-    color: var(--muted);
-    line-height: 1.6;
-  }
-  footer {
-    max-width: 1100px;
-    margin: 40px auto 0;
-    color: var(--muted);
-    font-size: 0.75rem;
-    text-align: center;
-  }
+  .limitations { font-size: 0.85rem; color: var(--muted); line-height: 1.7; }
+  .limitations li { margin-bottom: 8px; }
   #error-banner {
     display: none;
-    max-width: 1100px;
-    margin: 0 auto 20px;
-    background: #3a1f1f;
-    border: 1px solid #5c2b2b;
-    color: #f5b7b1;
+    margin-bottom: 20px;
+    background: #fdeceb;
+    border: 1px solid #f0bcb3;
+    color: #8a2e21;
     padding: 12px 16px;
     border-radius: 8px;
     font-size: 0.85rem;
   }
+
+  /* ---- Footer ---- */
+  footer {
+    background: #fff;
+    border-top: 1px solid var(--panel-border);
+    padding: 24px 16px 16px;
+    margin-top: 20px;
+  }
+  footer .inner { max-width: 1200px; margin: 0 auto; text-align: center; }
+  footer img.footer-banner { max-width: 700px; width: 100%; height: auto; margin: 0 auto 12px; display: block; }
+  footer img.footer-emblem { height: 60px; width: auto; margin: 0 auto 12px; display: block; }
+  footer .credits { color: var(--muted); font-size: 0.78rem; line-height: 1.7; }
+  footer .disclaimer-small { color: #8a6a2e; font-size: 0.72rem; margin-top: 10px; max-width: 700px; margin-left: auto; margin-right: auto; }
 </style>
 </head>
 <body>
 
-<header>
-  <h1>Solar Flare / CME Prediction Dashboard</h1>
-  <div class="subtitle">Live NOAA SWPC data + drag-based CME arrival model + McIntosh flare-probability model</div>
-</header>
+<div class="masthead">
+  <img src="assets/images/isro_banner.png" alt="Indian Space Research Organisation, Department of Space, Government of India">
+</div>
+<div class="tricolor-stripe"></div>
 
-<div id="error-banner"></div>
-<div class="meta-bar" id="meta-bar"></div>
-
-<div class="grid" id="grid">
-  <div class="card">
-    <h2>Solar Wind (L1, near-Earth)</h2>
-    <div id="solar-wind-stats"></div>
-  </div>
-
-  <div class="card">
-    <h2>Geomagnetic State</h2>
-    <div id="geo-stats"></div>
-  </div>
-
-  <div class="card wide">
-    <h2>Top Flare-Risk Active Regions (next 24h)</h2>
-    <table id="region-table">
-      <thead>
-        <tr><th>Region</th><th>Loc</th><th>McIntosh</th><th>Mag</th><th>C-class</th><th>M-class</th><th>X-class</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-
-  <div class="card wide">
-    <img class="chart" src="outputs/flare_probability_by_region.png" alt="Flare probability by region">
-  </div>
-
-  <div class="card wide">
-    <h2>Recent M/X Flares &rarr; Estimated CME Earth-Arrival</h2>
-    <table id="cme-table">
-      <thead>
-        <tr><th>Flare</th><th>Peak Time (UTC)</th><th>Est. CME v0</th><th>Arrival Window</th><th>Arrival Speed</th><th>Outlook</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-
-  <div class="card wide">
-    <img class="chart" src="outputs/cme_arrival_timeline.png" alt="CME arrival timeline">
-  </div>
-
-  <div class="card wide">
-    <h2 id="aditya-heading">Aditya-L1 (ISRO) Independent Cross-Validation</h2>
-    <div id="aditya-summary" style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;"></div>
-    <table id="aditya-table">
-      <thead>
-        <tr><th>Flare</th><th>Peak Time (UTC)</th><th>Confirmed by SoLEXS</th><th>SoLEXS Peak</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-
-  <div class="card wide">
-    <h2>Limitations</h2>
-    <div class="limitations">
-      CME initial speed is estimated from flare GOES class (CDAW-catalog statistics), not measured by coronagraph &mdash; treat transit times as order-of-magnitude, not precise forecasts.
-      No model can predict the exact moment a region will flare.
-      Storm severity depends heavily on IMF Bz, which is only reliably knowable once a CME sheath reaches L1, roughly 30&ndash;60 minutes before Earth impact &mdash; a physical limit of the observing geometry, not a modeling gap.
-      Aditya-L1/SoLEXS cross-validation uses raw total count rate vs. the day's median as an activity proxy, not a calibrated flux-to-GOES-class conversion, and Level-1 data has a multi-day publication latency (not real-time).
-    </div>
+<div class="site-title-bar">
+  <div class="inner">
+    <h1>Solar Flare / CME Prediction Dashboard</h1>
+    <div class="subtitle">Live NOAA SWPC data + Aditya-L1 (ISRO) cross-validation + drag-based CME arrival model + McIntosh flare-probability model</div>
   </div>
 </div>
 
+<div class="disclaimer">
+  <strong>Independent project notice:</strong> this is a personal, independently built dashboard. It is
+  <strong>not an official ISRO, NRSC, or Government of India website</strong> and is not affiliated with or
+  endorsed by these organizations. ISRO/NRSC logos are shown solely to credit Aditya-L1 (SoLEXS) as a genuine
+  data source used in the cross-validation panel below. All other data comes from NOAA's public Space Weather
+  Prediction Center feeds.
+</div>
+
+<nav class="tab-nav">
+  <div class="inner">
+    <button class="tab-btn active" data-tab="overview">Overview</button>
+    <button class="tab-btn" data-tab="regions">Active Regions</button>
+    <button class="tab-btn" data-tab="cme">CME Arrival</button>
+    <button class="tab-btn" data-tab="aditya">Aditya-L1 (ISRO)</button>
+    <button class="tab-btn" data-tab="about">About &amp; Limitations</button>
+  </div>
+</nav>
+
+<main>
+  <div id="error-banner"></div>
+  <div class="meta-bar" id="meta-bar"></div>
+
+  <section class="tab-panel active" id="tab-overview">
+    <div class="grid">
+      <div class="card">
+        <h2>Solar Wind (L1, near-Earth)</h2>
+        <div id="solar-wind-stats"></div>
+      </div>
+      <div class="card">
+        <h2>Geomagnetic State</h2>
+        <div id="geo-stats"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="tab-panel" id="tab-regions">
+    <div class="grid">
+      <div class="card wide">
+        <h2>Top Flare-Risk Active Regions (next 24h)</h2>
+        <table id="region-table">
+          <thead>
+            <tr><th>Region</th><th>Loc</th><th>McIntosh</th><th>Mag</th><th>C-class</th><th>M-class</th><th>X-class</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="card wide">
+        <img class="chart" src="outputs/flare_probability_by_region.png" alt="Flare probability by region">
+      </div>
+    </div>
+  </section>
+
+  <section class="tab-panel" id="tab-cme">
+    <div class="grid">
+      <div class="card wide">
+        <h2>Recent M/X Flares &rarr; Estimated CME Earth-Arrival</h2>
+        <table id="cme-table">
+          <thead>
+            <tr><th>Flare</th><th>Peak Time (UTC)</th><th>Est. CME v0</th><th>Arrival Window</th><th>Arrival Speed</th><th>Outlook</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="card wide">
+        <img class="chart" src="outputs/cme_arrival_timeline.png" alt="CME arrival timeline">
+      </div>
+    </div>
+  </section>
+
+  <section class="tab-panel" id="tab-aditya">
+    <div class="grid">
+      <div class="card wide">
+        <h2>Aditya-L1 (ISRO) Independent Cross-Validation</h2>
+        <div id="aditya-summary" style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;"></div>
+        <table id="aditya-table">
+          <thead>
+            <tr><th>Flare</th><th>Peak Time (UTC)</th><th>Confirmed by SoLEXS</th><th>SoLEXS Peak</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="tab-panel" id="tab-about">
+    <div class="grid">
+      <div class="card wide">
+        <h2>Models Used</h2>
+        <ul class="limitations">
+          <li><strong>Flare probability</strong> blends a McIntosh classification + Mount Wilson magnetic-class
+            lookup table, NOAA's own issued per-region probability (shown for comparison), and a Poisson
+            "hot region" term from the region's flares-in-the-last-24h count.</li>
+          <li><strong>CME Earth-arrival time</strong> uses the analytic Drag-Based Model of Vr&scaron;nak et al.
+            (2013, <em>Solar Physics</em> 285) &mdash; the same physics behind NOAA/ESA's operational CME-arrival
+            tools &mdash; solved for a low/best/high arrival window rather than a single number.</li>
+          <li><strong>Aditya-L1 cross-validation</strong> downloads real SoLEXS Level-1 X-ray light curves via
+            ISRO's PRADAN portal (ISSDC) and flags which GOES-detected flares show a matching count-rate
+            enhancement, as independent confirmation from a second satellite in a different orbit.</li>
+        </ul>
+      </div>
+      <div class="card wide">
+        <h2>Limitations</h2>
+        <ul class="limitations">
+          <li>CME initial speed is estimated from flare GOES class (CDAW-catalog statistics), not measured by
+            coronagraph &mdash; treat transit times as order-of-magnitude, not precise forecasts.</li>
+          <li>No model can predict the exact moment a region will flare.</li>
+          <li>Storm severity depends heavily on IMF Bz, which is only reliably knowable once a CME sheath
+            reaches L1, roughly 30&ndash;60 minutes before Earth impact &mdash; a physical limit of the
+            observing geometry, not a modeling gap.</li>
+          <li>Aditya-L1/SoLEXS cross-validation uses raw total count rate vs. the day's median as an activity
+            proxy, not a calibrated flux-to-GOES-class conversion, and Level-1 data has a multi-day publication
+            latency (not real-time).</li>
+          <li>NOAA's real-time solar wind feed can return HTTP 200 with data that's hours stale during
+            spacecraft/ground-station gaps &mdash; this dashboard checks the payload's own timestamp and flags
+            it as stale when that happens.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</main>
+
 <footer>
-  Data: NOAA Space Weather Prediction Center &middot; Model: Drag-Based Model (Vr&scaron;nak et al. 2013) + McIntosh/Mount Wilson flare-probability table
+  <div class="inner">
+    <img class="footer-banner" src="assets/images/nrsc_banner.png" alt="National Remote Sensing Centre, ISRO">
+    <img class="footer-emblem" src="assets/images/indiagov_logo.png" alt="Government of India / india.gov.in">
+    <div class="credits">
+      Data: NOAA Space Weather Prediction Center &middot; ISRO Aditya-L1 (SoLEXS via PRADAN/ISSDC)<br>
+      Model: Drag-Based Model (Vr&scaron;nak et al. 2013) + McIntosh/Mount Wilson flare-probability table
+    </div>
+    <div class="disclaimer-small">
+      NRSC and Government of India emblems are shown for data-source attribution only. This dashboard is an
+      independent personal project and is not produced, reviewed, or endorsed by ISRO, NRSC, or the Government
+      of India.
+    </div>
+  </div>
 </footer>
 
 <script>
+function initTabs() {
+  const buttons = document.querySelectorAll('.tab-btn');
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      buttons.forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    });
+  });
+}
+
 async function loadReport() {
   const errorBanner = document.getElementById('error-banner');
 
@@ -311,7 +447,7 @@ function render(report) {
       <td>${f.max_class}</td>
       <td>${f.max_time}</td>
       <td>${f.isro_confirmed
-        ? '<span class="outlook-tag" style="background:#1e3a2e;color:var(--good)">✓ Confirmed</span>'
+        ? '<span class="outlook-tag" style="background:#e5f3e3;color:var(--good);border-color:#bfe3b8">✓ Confirmed</span>'
         : '<span class="outlook-tag">— no SoLEXS signal</span>'}</td>
       <td>${f.solexs_peak_counts_per_sec ?? '—'}</td>
     </tr>`).join('');
@@ -321,6 +457,7 @@ function render(report) {
   }
 }
 
+initTabs();
 loadReport();
 </script>
 
