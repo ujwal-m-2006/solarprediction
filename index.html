@@ -194,11 +194,23 @@
   </div>
 
   <div class="card wide">
+    <h2 id="aditya-heading">Aditya-L1 (ISRO) Independent Cross-Validation</h2>
+    <div id="aditya-summary" style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;"></div>
+    <table id="aditya-table">
+      <thead>
+        <tr><th>Flare</th><th>Peak Time (UTC)</th><th>Confirmed by SoLEXS</th><th>SoLEXS Peak</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="card wide">
     <h2>Limitations</h2>
     <div class="limitations">
       CME initial speed is estimated from flare GOES class (CDAW-catalog statistics), not measured by coronagraph &mdash; treat transit times as order-of-magnitude, not precise forecasts.
       No model can predict the exact moment a region will flare.
       Storm severity depends heavily on IMF Bz, which is only reliably knowable once a CME sheath reaches L1, roughly 30&ndash;60 minutes before Earth impact &mdash; a physical limit of the observing geometry, not a modeling gap.
+      Aditya-L1/SoLEXS cross-validation uses raw total count rate vs. the day's median as an activity proxy, not a calibrated flux-to-GOES-class conversion, and Level-1 data has a multi-day publication latency (not real-time).
     </div>
   </div>
 </div>
@@ -286,6 +298,27 @@ function render(report) {
       <td><span class="outlook-tag">${c.geomagnetic_outlook}</span></td>
     </tr>`;
   }).join('');
+
+  const av = report.aditya_l1_cross_validation.summary;
+  const avSummaryEl = document.getElementById('aditya-summary');
+  const avBody = document.querySelector('#aditya-table tbody');
+  if (av.available) {
+    avSummaryEl.innerHTML = `Source: ${av.source} — ${av.satellite}/${av.instrument}, data for ${av.date} ` +
+      `(${av.data_age_days}d old — Level-1 processing latency, not real-time). ` +
+      `<strong style="color:var(--good)">${av.goes_flares_confirmed}/${av.goes_flares_on_date}</strong> ` +
+      `GOES flares that day independently confirmed by a SoLEXS count-rate enhancement.`;
+    avBody.innerHTML = report.aditya_l1_cross_validation.flares.map(f => `<tr>
+      <td>${f.max_class}</td>
+      <td>${f.max_time}</td>
+      <td>${f.isro_confirmed
+        ? '<span class="outlook-tag" style="background:#1e3a2e;color:var(--good)">✓ Confirmed</span>'
+        : '<span class="outlook-tag">— no SoLEXS signal</span>'}</td>
+      <td>${f.solexs_peak_counts_per_sec ?? '—'}</td>
+    </tr>`).join('');
+  } else {
+    avSummaryEl.textContent = `Not available: ${av.reason ?? 'unknown reason'}`;
+    avBody.innerHTML = '';
+  }
 }
 
 loadReport();

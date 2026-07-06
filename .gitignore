@@ -2,6 +2,7 @@ __pycache__/
 *.pyc
 .env
 .scratch/
+data/pradan_cache/
 outputs/*.png
 outputs/report.json
 outputs/report.txt

@@ -3,11 +3,12 @@ Orchestrator: pulls live NOAA data, runs the flare-probability model on
 every active region, runs the drag-based CME arrival model on every
 recent M/X flare event, and assembles one structured prediction report.
 """
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 import fetch_data
 import flare_probability
 import drag_based_model as dbm
+import pradan_client
 
 # Empirical CME-speed-from-flare-class estimator.
 # Real-time coronagraph (LASCO/DONKI) CME speeds were not reachable from
@@ -59,6 +60,65 @@ def latest_active(records, speed_field, extra_fields=()):
     if not candidates:
         return None
     return max(candidates, key=lambda r: r["time_tag"])
+
+
+# GOES and SoLEXS are on different satellites with independent clocks and
+# onboard time handling; a few minutes of slack avoids penalizing a real
+# match over clock/detector-response timing differences rather than an
+# actual absence of correlated activity.
+CROSS_VALIDATION_TOLERANCE_MINUTES = 5
+
+
+def _flares_confirmed_by_solexs(flares_on_date, solexs_result):
+    """
+    Tag each GOES flare with isro_confirmed: True if any SoLEXS
+    enhancement window overlaps its begin/end time (with tolerance).
+    Returns (tagged_flares, summary_stats).
+    """
+    if not solexs_result.get("available"):
+        return [], {"available": False, "reason": solexs_result.get("reason")}
+
+    tolerance = timedelta(minutes=CROSS_VALIDATION_TOLERANCE_MINUTES)
+    enhancement_windows = []
+    for e in solexs_result["enhancements"]:
+        start = datetime.fromisoformat(e["start"]) - tolerance
+        end = datetime.fromisoformat(e["end"]) + tolerance
+        enhancement_windows.append((start, end, e["peak_counts_per_sec"]))
+
+    tagged = []
+    confirmed_count = 0
+    for f in flares_on_date:
+        try:
+            f_begin = datetime.fromisoformat(f["begin_time"].replace("Z", "+00:00"))
+            f_end = datetime.fromisoformat(f["end_time"].replace("Z", "+00:00"))
+        except (KeyError, ValueError):
+            continue
+
+        match = next((w for w in enhancement_windows if f_begin <= w[1] and w[0] <= f_end), None)
+        confirmed = match is not None
+        if confirmed:
+            confirmed_count += 1
+        tagged.append({
+            "begin_time": f["begin_time"],
+            "max_time": f["max_time"],
+            "end_time": f["end_time"],
+            "max_class": f["max_class"],
+            "isro_confirmed": confirmed,
+            "solexs_peak_counts_per_sec": match[2] if match else None,
+        })
+
+    return tagged, {
+        "available": True,
+        "date": solexs_result["date"],
+        "data_age_days": solexs_result.get("data_age_days"),
+        "instrument": solexs_result["instrument"],
+        "satellite": solexs_result["satellite"],
+        "source": solexs_result["source"],
+        "baseline_counts_per_sec": solexs_result["baseline_counts_per_sec"],
+        "total_enhancements_detected": len(solexs_result["enhancements"]),
+        "goes_flares_on_date": len(tagged),
+        "goes_flares_confirmed": confirmed_count,
+    }
 
 
 def build_report():
@@ -117,6 +177,14 @@ def build_report():
             "geomagnetic_outlook": storm,
         })
 
+    solexs_result = pradan_client.fetch_solexs_enhancements()
+    aditya_l1_flares, aditya_l1_summary = [], {"available": False, "reason": "not attempted"}
+    if solexs_result.get("available"):
+        flares_on_date = [f for f in flares if f.get("begin_time", "").startswith(solexs_result["date"])]
+        aditya_l1_flares, aditya_l1_summary = _flares_confirmed_by_solexs(flares_on_date, solexs_result)
+    else:
+        aditya_l1_summary = {"available": False, "reason": solexs_result.get("reason")}
+
     now = datetime.now(timezone.utc)
     plasma_age_hours = _age_hours(plasma.get("time_tag") if plasma else None, now)
     STALE_THRESHOLD_HOURS = 3.0
@@ -141,6 +209,10 @@ def build_report():
         },
         "top_flare_risk_regions": top_regions,
         "recent_mx_flares_cme_arrival": cme_predictions,
+        "aditya_l1_cross_validation": {
+            "summary": aditya_l1_summary,
+            "flares": aditya_l1_flares,
+        },
     }
     return report
 

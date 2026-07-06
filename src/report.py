@@ -76,6 +76,20 @@ def format_text_report(report):
         )
         lines.append(f"         Outlook: {c['geomagnetic_outlook']}")
 
+    av = report["aditya_l1_cross_validation"]["summary"]
+    lines.append("\nADITYA-L1 (ISRO) INDEPENDENT CROSS-VALIDATION")
+    if av.get("available"):
+        lines.append(f"  Source: {av['source']} - {av['satellite']}/{av['instrument']}, "
+                      f"data for {av['date']} ({av['data_age_days']}d old - L1 processing latency)")
+        lines.append(f"  {av['goes_flares_confirmed']}/{av['goes_flares_on_date']} GOES flares that day "
+                      f"independently confirmed by a SoLEXS count-rate enhancement:")
+        for f in report["aditya_l1_cross_validation"]["flares"]:
+            mark = "CONFIRMED" if f["isro_confirmed"] else "no SoLEXS signal"
+            peak = f" (SoLEXS peak {f['solexs_peak_counts_per_sec']:.0f} c/s)" if f["isro_confirmed"] else ""
+            lines.append(f"    {f['max_class']:6s} @ {f['max_time']}  [{mark}]{peak}")
+    else:
+        lines.append(f"  Not available: {av.get('reason')}")
+
     lines.append("\nLIMITATIONS")
     lines.append("  - CME initial speed is estimated from flare GOES class (CDAW-catalog")
     lines.append("    statistics), not measured by coronagraph -- treat transit times as")
@@ -83,6 +97,9 @@ def format_text_report(report):
     lines.append("  - No model can predict the exact moment a region will flare.")
     lines.append("  - Storm severity depends heavily on IMF Bz, which is only reliably")
     lines.append("    knowable once a CME sheath reaches L1, ~30-60 min before Earth impact.")
+    lines.append("  - SoLEXS cross-validation uses raw total count rate vs. the day's median,")
+    lines.append("    not a calibrated flux-to-GOES-class conversion -- a good activity proxy,")
+    lines.append("    not a substitute for GOES's calibrated W/m2 classification.")
     lines.append("=" * 70)
     return "\n".join(lines)
 

@@ -86,6 +86,40 @@ exactly as above and just skips the remote save.
 4. `python3 src/report.py` — you'll see `Saved to Supabase: report_runs.id=...`
    instead of the skip message.
 
+## Aditya-L1 (ISRO) independent cross-validation (optional)
+
+ISRO's Aditya-L1 solar observatory (at the Sun-Earth L1 point, same
+vantage point as the NOAA/NASA spacecraft above) carries **SoLEXS**, a
+soft X-ray spectrometer covering the same band GOES XRS uses to classify
+flares — but on a completely different satellite in a completely
+different orbit. `src/pradan_client.py` downloads real SoLEXS Level-1
+data and flags which GOES-detected flares that day show a matching
+SoLEXS count-rate enhancement, as genuine independent confirmation
+rather than another mirror of the same NOAA measurement.
+
+Note on naming: the correct ISRO source here is **PRADAN**
+(`pradan1.issdc.gov.in`), run by ISSDC. NRSC (National Remote Sensing
+Centre) is ISRO's *land* remote-sensing center (Bhuvan, Cartosat/
+Resourcesat imagery) and doesn't publish solar or space-weather data at
+all — there's nothing from NRSC to integrate for this project.
+
+Setup (optional — everything above works without it):
+1. Register at [pradan.issdc.gov.in](https://pradan.issdc.gov.in).
+2. Add `PRADAN_USERNAME` and `PRADAN_PASSWORD` to `.env`.
+3. `python3 src/report.py` — the report and dashboard will show an
+   "Aditya-L1 Independent Cross-Validation" section.
+
+Two things worth knowing about this data:
+- **Not real-time.** Level-1 products have a multi-day processing
+  latency (observed: ~3 days) — this validates recent history, not
+  today.
+- **Proxy, not calibrated flux.** The confirmation check compares raw
+  SoLEXS total count rate against that day's median (>3x = "enhanced"),
+  not a calibrated flux-to-GOES-class conversion. In testing this
+  reliably caught every M-class flare and the day's largest C-class
+  flare, but missed smaller C-class events below its detection floor —
+  a real, physically-expected instrument sensitivity limit, not a bug.
+
 ## Honest limitations
 
 - No model can predict the exact moment a region will flare — these are
@@ -96,3 +130,7 @@ exactly as above and just skips the remote save.
   limit of the observing geometry, not a gap in the model.
 - CME speed is inferred from flare class, not measured — treat transit
   times as order-of-magnitude, not precise forecasts.
+- NOAA's real-time solar wind feed can return HTTP 200 with data that's
+  hours stale during spacecraft/ground-station gaps — `report.py` checks
+  the payload's own timestamp against wall-clock time and flags this as
+  `stale` when it happens, rather than trusting a successful HTTP response.
