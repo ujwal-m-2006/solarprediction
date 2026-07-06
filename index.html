@@ -30,8 +30,15 @@
   }
 
   /* ---- Masthead (real ISRO banner) ---- */
-  .masthead { background: #000; text-align: center; }
-  .masthead img { width: 100%; max-width: 1600px; height: auto; display: block; margin: 0 auto; }
+  .masthead { background: #000; text-align: center; overflow: hidden; }
+  .masthead img {
+    width: 100%;
+    max-width: 1600px;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    object-fit: contain;
+  }
   .tricolor-stripe { height: 4px; background: linear-gradient(to right, var(--saffron) 33.3%, #ffffff 33.3% 66.6%, var(--green) 66.6%); }
 
   /* ---- Site title bar ---- */
@@ -195,7 +202,10 @@
 <body>
 
 <div class="masthead">
-  <img src="assets/images/isro_banner.png" alt="Indian Space Research Organisation, Department of Space, Government of India">
+  <picture>
+    <source media="(max-width: 700px)" srcset="assets/images/isro_banner_mob.png">
+    <img src="assets/images/isro_banner.png" alt="Indian Space Research Organisation, Department of Space, Government of India">
+  </picture>
 </div>
 <div class="tricolor-stripe"></div>
 
