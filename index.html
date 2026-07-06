@@ -29,16 +29,6 @@
     font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   }
 
-  /* ---- Masthead (real ISRO banner) ---- */
-  .masthead { background: var(--navy); text-align: center; overflow: hidden; }
-  .masthead img {
-    width: 100%;
-    max-width: 1600px;
-    height: auto;
-    display: block;
-    margin: 0 auto;
-    object-fit: contain;
-  }
   .tricolor-stripe { height: 4px; background: linear-gradient(to right, var(--saffron) 33.3%, #ffffff 33.3% 66.6%, var(--green) 66.6%); }
 
   /* ---- Site title bar ---- */
@@ -47,7 +37,14 @@
     color: #fff;
     padding: 14px 24px;
   }
-  .site-title-bar .inner { max-width: 1200px; margin: 0 auto; }
+  .site-title-bar .inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .site-title-bar .logo-mark { height: 56px; width: auto; flex-shrink: 0; }
   .site-title-bar h1 { font-size: 1.4rem; margin: 0 0 2px; font-weight: 600; }
   .site-title-bar .subtitle { font-size: 0.85rem; color: #b9c6da; }
 
@@ -201,18 +198,15 @@
 </head>
 <body>
 
-<div class="masthead">
-  <picture>
-    <source media="(max-width: 700px)" srcset="assets/images/isro_banner_mob.png">
-    <img src="assets/images/isro_banner.png" alt="Indian Space Research Organisation, Department of Space, Government of India">
-  </picture>
-</div>
 <div class="tricolor-stripe"></div>
 
 <div class="site-title-bar">
   <div class="inner">
-    <h1>Solar Flare / CME Prediction Dashboard</h1>
-    <div class="subtitle">Live NOAA SWPC data + Aditya-L1 (ISRO) cross-validation + drag-based CME arrival model + McIntosh flare-probability model</div>
+    <img class="logo-mark" src="assets/images/isro_nrsc_logo.png" alt="ISRO / NRSC">
+    <div>
+      <h1>Solar Flare / CME Prediction Dashboard</h1>
+      <div class="subtitle">Live NOAA SWPC data + Aditya-L1 (ISRO) cross-validation + drag-based CME arrival model + McIntosh flare-probability model</div>
+    </div>
   </div>
 </div>
 
