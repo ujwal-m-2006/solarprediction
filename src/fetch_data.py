@@ -20,6 +20,7 @@ ENDPOINTS = {
     "xray_flares": "https://services.swpc.noaa.gov/json/goes/primary/xray-flares-7-day.json",
     "solar_regions": "https://services.swpc.noaa.gov/json/solar_regions.json",
     "f107_flux": "https://services.swpc.noaa.gov/json/f107_cm_flux.json",
+    "xray_flux": "https://services.swpc.noaa.gov/json/goes/primary/xrays-6-hour.json",
 }
 
 TIMEOUT_SECONDS = 12

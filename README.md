@@ -20,6 +20,7 @@ below.
 | GOES X-ray flare events (7-day) | `services.swpc.noaa.gov/json/goes/primary/xray-flares-7-day.json` |
 | Solar region summary (McIntosh/Mount Wilson class, NOAA's own flare probabilities) | `services.swpc.noaa.gov/json/solar_regions.json` |
 | F10.7 cm solar radio flux | `services.swpc.noaa.gov/json/f107_cm_flux.json` |
+| GOES X-ray flux time series (6h, for nowcasting) | `services.swpc.noaa.gov/json/goes/primary/xrays-6-hour.json` |
 
 Every dataset has a bundled fallback snapshot in `data/` (captured live on
 2026-07-03) so the pipeline still runs if outbound network is unavailable.
@@ -53,6 +54,31 @@ reachable from this environment) — it's estimated from the flare's GOES
 class using published CDAW-catalog statistics (Yashiro et al. 2004; Bein
 et al. 2012). This is clearly labeled as an estimate in the report output,
 not presented as a measurement.
+
+## Dashboard tabs
+
+`index.html` is a 5-tab live dashboard reading directly from `outputs/report.json`:
+- **Overview** — plain-language summary of current conditions.
+- **Live Data** — a Live Summary metric-card row (Kp, wind speed, Bz, X-ray class,
+  F10.7), plus a dedicated Solar Wind section with a speed history chart and a
+  short-term trend projection.
+- **Space Weather** — four sub-tabs:
+  - *Forecasting*: the region flare-probability table + chart (see model #1 below).
+  - *Nowcasting*: live GOES X-ray flux converted to A/B/C/M/X class in real time,
+    with a rising/falling trend and a 6h flux chart (`src/nowcast.py`).
+  - *CME Tracker*: each tracked CME as a Sun→Earth progress bar (elapsed time /
+    estimated transit time), with live arrived/in-transit status.
+  - *Earth Impact*: current Kp/G-scale/Bz, the next incoming CME, and a Kp
+    history + trend-projection chart.
+- **Aditya-L1 (ISRO)** — the SoLEXS cross-validation panel (see below).
+- **About & Limitations** — what each model actually does and doesn't do.
+
+**Short-term trend charts** (Live Data's wind-speed chart, Earth Impact's Kp
+chart) use `src/trend_forecast.py` — a naive ordinary-least-squares linear fit
+over the last few hours of data, extrapolated forward and shown as a dashed
+line. This is a statistical "if nothing changes" projection, not a
+physics-based forecast, and is labeled as such in the UI — it's a different,
+much weaker claim than the drag-based CME arrival model.
 
 ## Run it
 

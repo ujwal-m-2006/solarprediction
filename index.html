@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Solar Flare / CME Prediction Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <style>
   :root {
     --bg: #eef1f5;
@@ -32,113 +33,69 @@
   .tricolor-stripe { height: 4px; background: linear-gradient(to right, var(--saffron) 33.3%, #ffffff 33.3% 66.6%, var(--green) 66.6%); }
 
   /* ---- Site title bar ---- */
-  .site-title-bar {
-    background: var(--navy);
-    color: #fff;
-    padding: 14px 24px;
-  }
-  .site-title-bar .inner {
-    max-width: 1200px;
-    margin: 0 auto;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
+  .site-title-bar { background: var(--navy); color: #fff; padding: 14px 24px; }
+  .site-title-bar .inner { max-width: 1300px; margin: 0 auto; display: flex; align-items: center; gap: 16px; }
   .site-title-bar .logo-mark { height: 56px; width: auto; flex-shrink: 0; }
   .site-title-bar h1 { font-size: 1.4rem; margin: 0 0 2px; font-weight: 600; }
   .site-title-bar .subtitle { font-size: 0.85rem; color: #b9c6da; }
 
   /* ---- Disclaimer ---- */
   .disclaimer {
-    max-width: 1200px;
-    margin: 14px auto 0;
-    padding: 10px 16px;
-    background: #fff4e0;
-    border: 1px solid #f0c987;
-    border-radius: 6px;
-    color: #6b4a10;
-    font-size: 0.8rem;
-    line-height: 1.5;
+    max-width: 1300px; margin: 14px auto 0; padding: 10px 16px;
+    background: #fff4e0; border: 1px solid #f0c987; border-radius: 6px;
+    color: #6b4a10; font-size: 0.8rem; line-height: 1.5;
   }
 
   /* ---- Tab navigation ---- */
-  .tab-nav {
-    background: var(--navy-dark);
-    position: sticky;
-    top: 0;
-    z-index: 10;
-  }
-  .tab-nav .inner {
-    max-width: 1200px;
-    margin: 0 auto;
-    display: flex;
-    flex-wrap: wrap;
-  }
+  .tab-nav { background: var(--navy-dark); position: sticky; top: 0; z-index: 10; }
+  .tab-nav .inner { max-width: 1300px; margin: 0 auto; display: flex; flex-wrap: wrap; }
   .tab-btn {
-    background: none;
-    border: none;
-    color: #cdd8e8;
-    padding: 12px 20px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    letter-spacing: 0.02em;
-    cursor: pointer;
-    border-bottom: 3px solid transparent;
-    font-family: inherit;
+    background: none; border: none; color: #cdd8e8; padding: 12px 20px;
+    font-size: 0.85rem; font-weight: 600; letter-spacing: 0.02em; cursor: pointer;
+    border-bottom: 3px solid transparent; font-family: inherit;
   }
   .tab-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
   .tab-btn.active { color: #fff; border-bottom-color: var(--saffron); }
 
-  main { max-width: 1200px; margin: 0 auto; padding: 20px 16px 60px; }
+  .subtab-nav { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; border-bottom: 1px solid var(--panel-border); }
+  .subtab-btn {
+    background: none; border: none; color: var(--muted); padding: 8px 16px;
+    font-size: 0.82rem; font-weight: 600; cursor: pointer; border-bottom: 3px solid transparent;
+    font-family: inherit;
+  }
+  .subtab-btn:hover { color: var(--navy); }
+  .subtab-btn.active { color: var(--navy); border-bottom-color: var(--saffron); }
+  .subtab-panel { display: none; }
+  .subtab-panel.active { display: block; }
+
+  main { max-width: 1300px; margin: 0 auto; padding: 20px 16px 60px; }
   .tab-panel { display: none; }
   .tab-panel.active { display: block; }
 
-  .meta-bar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    font-size: 0.8rem;
-    color: var(--muted);
-    margin-bottom: 20px;
-  }
-  .pill {
-    background: var(--panel);
-    border: 1px solid var(--panel-border);
-    border-radius: 999px;
-    padding: 4px 12px;
-  }
+  .meta-bar { display: flex; flex-wrap: wrap; gap: 10px; font-size: 0.8rem; color: var(--muted); margin-bottom: 20px; }
+  .pill { background: var(--panel); border: 1px solid var(--panel-border); border-radius: 999px; padding: 4px 12px; }
   .pill.live { color: var(--good); border-color: #bfe3b8; }
   .pill.fallback { color: var(--warn); border-color: #f0bcb3; }
 
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 18px;
-  }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; }
+  .grid.metrics { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
   .card {
-    background: var(--panel);
-    border: 1px solid var(--panel-border);
-    border-radius: 10px;
-    padding: 18px 20px;
-    box-shadow: 0 1px 3px rgba(20,30,50,0.06);
+    background: var(--panel); border: 1px solid var(--panel-border); border-radius: 10px;
+    padding: 18px 20px; box-shadow: 0 1px 3px rgba(20,30,50,0.06);
   }
   .card h2 {
-    font-size: 0.9rem;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--navy);
-    margin: 0 0 14px;
-    padding-bottom: 8px;
-    border-bottom: 2px solid var(--saffron);
-    display: inline-block;
+    font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--navy);
+    margin: 0 0 14px; padding-bottom: 8px; border-bottom: 2px solid var(--saffron); display: inline-block;
   }
-  .stat-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 6px 0;
-    border-bottom: 1px dashed var(--panel-border);
-    font-size: 0.92rem;
-  }
+  .section-heading { font-size: 1.05rem; font-weight: 700; color: var(--navy); margin: 28px 0 12px; }
+  .section-heading:first-child { margin-top: 0; }
+
+  .metric-card { text-align: center; }
+  .metric-card .metric-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+  .metric-card .metric-value { font-size: 1.7rem; font-weight: 700; color: var(--navy); margin: 4px 0; }
+  .metric-card .metric-sub { font-size: 0.75rem; color: var(--muted); }
+
+  .stat-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed var(--panel-border); font-size: 0.92rem; }
   .stat-row:last-child { border-bottom: none; }
   .stat-row .label { color: var(--muted); }
   .stat-row .value { font-weight: 600; }
@@ -153,43 +110,44 @@
   .bar-fill.m { background: var(--accent-m); }
   .bar-fill.x { background: var(--accent-x); }
   .noaa-compare { color: var(--muted); font-size: 0.78rem; }
-  img.chart {
-    width: 100%;
-    border-radius: 8px;
-    border: 1px solid var(--panel-border);
-    margin-top: 8px;
-    background: #fff;
-  }
   .outlook-tag {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 6px;
-    font-size: 0.76rem;
-    background: #eef1f5;
-    color: var(--text);
-    border: 1px solid var(--panel-border);
+    display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 0.76rem;
+    background: #eef1f5; color: var(--text); border: 1px solid var(--panel-border);
   }
   .limitations { font-size: 0.85rem; color: var(--muted); line-height: 1.7; }
   .limitations li { margin-bottom: 8px; }
   #error-banner {
-    display: none;
-    margin-bottom: 20px;
-    background: #fdeceb;
-    border: 1px solid #f0bcb3;
-    color: #8a2e21;
-    padding: 12px 16px;
-    border-radius: 8px;
-    font-size: 0.85rem;
+    display: none; margin-bottom: 20px; background: #fdeceb; border: 1px solid #f0bcb3;
+    color: #8a2e21; padding: 12px 16px; border-radius: 8px; font-size: 0.85rem;
   }
+  .chart-wrap { position: relative; height: 280px; margin-top: 10px; }
+  .chart-wrap.short { height: 180px; }
+
+  /* ---- Gauge ---- */
+  .gauge-track { height: 14px; border-radius: 7px; background: #e7ecf2; overflow: hidden; display: flex; margin: 8px 0; }
+  .gauge-seg { height: 100%; }
+  .gauge-marker-wrap { position: relative; height: 0; }
+  .gauge-marker {
+    position: absolute; top: -22px; width: 2px; height: 14px; background: var(--navy);
+    transform: translateX(-1px);
+  }
+  .gauge-scale-labels { display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--muted); }
+
+  /* ---- CME tracker ---- */
+  .cme-card { margin-bottom: 16px; padding: 14px 16px; border: 1px solid var(--panel-border); border-radius: 8px; }
+  .cme-card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px; }
+  .cme-progress-track { height: 20px; border-radius: 10px; background: #e7ecf2; position: relative; overflow: hidden; }
+  .cme-progress-fill { height: 100%; background: linear-gradient(to right, var(--saffron), var(--accent-m)); border-radius: 10px; transition: width 0.3s; }
+  .cme-progress-icons { display: flex; justify-content: space-between; font-size: 1rem; margin-top: 4px; color: var(--muted); }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 0.74rem; font-weight: 600; }
+  .badge.arrived { background: #e5f3e3; color: var(--good); }
+  .badge.transit { background: #fff4e0; color: #a56b0a; }
+
+  img.chart { width: 100%; border-radius: 8px; border: 1px solid var(--panel-border); margin-top: 8px; background: #fff; }
 
   /* ---- Footer ---- */
-  footer {
-    background: #fff;
-    border-top: 1px solid var(--panel-border);
-    padding: 24px 16px 16px;
-    margin-top: 20px;
-  }
-  footer .inner { max-width: 1200px; margin: 0 auto; text-align: center; }
+  footer { background: #fff; border-top: 1px solid var(--panel-border); padding: 24px 16px 16px; margin-top: 20px; }
+  footer .inner { max-width: 1300px; margin: 0 auto; text-align: center; }
   footer img.footer-banner { max-width: 700px; width: 100%; height: auto; margin: 0 auto 12px; display: block; }
   footer img.footer-emblem { height: 60px; width: auto; margin: 0 auto 12px; display: block; }
   footer .credits { color: var(--muted); font-size: 0.78rem; line-height: 1.7; }
@@ -221,8 +179,8 @@
 <nav class="tab-nav">
   <div class="inner">
     <button class="tab-btn active" data-tab="overview">Overview</button>
-    <button class="tab-btn" data-tab="regions">Active Regions</button>
-    <button class="tab-btn" data-tab="cme">CME Arrival</button>
+    <button class="tab-btn" data-tab="live">Live Data</button>
+    <button class="tab-btn" data-tab="spaceweather">Space Weather</button>
     <button class="tab-btn" data-tab="aditya">Aditya-L1 (ISRO)</button>
     <button class="tab-btn" data-tab="about">About &amp; Limitations</button>
   </div>
@@ -232,6 +190,7 @@
   <div id="error-banner"></div>
   <div class="meta-bar" id="meta-bar"></div>
 
+  <!-- ================= OVERVIEW ================= -->
   <section class="tab-panel active" id="tab-overview">
     <div class="grid">
       <div class="card">
@@ -242,43 +201,94 @@
         <h2>Geomagnetic State</h2>
         <div id="geo-stats"></div>
       </div>
+      <div class="card wide">
+        <h2>Right Now, In Brief</h2>
+        <div id="overview-summary" style="font-size:0.92rem; line-height:1.7;"></div>
+      </div>
     </div>
   </section>
 
-  <section class="tab-panel" id="tab-regions">
+  <!-- ================= LIVE DATA ================= -->
+  <section class="tab-panel" id="tab-live">
+    <div class="section-heading">Live Summary</div>
+    <div class="grid metrics" id="live-summary-cards"></div>
+
+    <div class="section-heading">Solar Wind</div>
     <div class="grid">
-      <div class="card wide">
-        <h2>Top Flare-Risk Active Regions (next 24h)</h2>
-        <table id="region-table">
-          <thead>
-            <tr><th>Region</th><th>Loc</th><th>McIntosh</th><th>Mag</th><th>C-class</th><th>M-class</th><th>X-class</th></tr>
-          </thead>
-          <tbody></tbody>
-        </table>
+      <div class="card">
+        <h2>Current Conditions</h2>
+        <div id="live-solar-wind-stats"></div>
       </div>
       <div class="card wide">
-        <img class="chart" src="outputs/flare_probability_by_region.png" alt="Flare probability by region">
+        <h2>Solar Wind Speed &mdash; History &amp; Short-Term Trend</h2>
+        <div class="chart-wrap"><canvas id="chart-wind-speed"></canvas></div>
       </div>
     </div>
   </section>
 
-  <section class="tab-panel" id="tab-cme">
-    <div class="grid">
-      <div class="card wide">
-        <h2>Recent M/X Flares &rarr; Estimated CME Earth-Arrival</h2>
-        <table id="cme-table">
-          <thead>
-            <tr><th>Flare</th><th>Peak Time (UTC)</th><th>Est. CME v0</th><th>Arrival Window</th><th>Arrival Speed</th><th>Outlook</th></tr>
-          </thead>
-          <tbody></tbody>
-        </table>
+  <!-- ================= SPACE WEATHER ================= -->
+  <section class="tab-panel" id="tab-spaceweather">
+    <nav class="subtab-nav">
+      <button class="subtab-btn active" data-subtab="forecasting">Forecasting</button>
+      <button class="subtab-btn" data-subtab="nowcasting">Nowcasting</button>
+      <button class="subtab-btn" data-subtab="cmetracker">CME Tracker</button>
+      <button class="subtab-btn" data-subtab="earthimpact">Earth Impact</button>
+    </nav>
+
+    <div class="subtab-panel active" id="subtab-forecasting">
+      <div class="grid">
+        <div class="card wide">
+          <h2>Top Flare-Risk Active Regions (next 24h)</h2>
+          <table id="region-table">
+            <thead>
+              <tr><th>Region</th><th>Loc</th><th>McIntosh</th><th>Mag</th><th>C-class</th><th>M-class</th><th>X-class</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="card wide">
+          <h2>Blended Flare Probability by Region</h2>
+          <div class="chart-wrap"><canvas id="chart-region-probability"></canvas></div>
+        </div>
       </div>
+    </div>
+
+    <div class="subtab-panel" id="subtab-nowcasting">
+      <div class="grid metrics" id="nowcast-cards"></div>
+      <div class="grid" style="margin-top:18px;">
+        <div class="card wide">
+          <h2>GOES X-ray Flux &mdash; Last 6 Hours (log scale)</h2>
+          <div class="chart-wrap"><canvas id="chart-xray-flux"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="subtab-panel" id="subtab-cmetracker">
       <div class="card wide">
-        <img class="chart" src="outputs/cme_arrival_timeline.png" alt="CME arrival timeline">
+        <h2>Recent M/X Flares &rarr; CME Earth-Arrival Tracker</h2>
+        <div id="cme-tracker-cards"></div>
+      </div>
+    </div>
+
+    <div class="subtab-panel" id="subtab-earthimpact">
+      <div class="grid">
+        <div class="card">
+          <h2>Current Geomagnetic State</h2>
+          <div id="earth-impact-stats"></div>
+        </div>
+        <div class="card">
+          <h2>Next Incoming CME</h2>
+          <div id="earth-impact-incoming"></div>
+        </div>
+        <div class="card wide">
+          <h2>Planetary Kp &mdash; History &amp; Short-Term Trend</h2>
+          <div class="chart-wrap"><canvas id="chart-kp-trend"></canvas></div>
+        </div>
       </div>
     </div>
   </section>
 
+  <!-- ================= ADITYA-L1 ================= -->
   <section class="tab-panel" id="tab-aditya">
     <div class="grid">
       <div class="card wide">
@@ -294,17 +304,26 @@
     </div>
   </section>
 
+  <!-- ================= ABOUT ================= -->
   <section class="tab-panel" id="tab-about">
     <div class="grid">
       <div class="card wide">
         <h2>Models Used</h2>
         <ul class="limitations">
-          <li><strong>Flare probability</strong> blends a McIntosh classification + Mount Wilson magnetic-class
-            lookup table, NOAA's own issued per-region probability (shown for comparison), and a Poisson
-            "hot region" term from the region's flares-in-the-last-24h count.</li>
-          <li><strong>CME Earth-arrival time</strong> uses the analytic Drag-Based Model of Vr&scaron;nak et al.
-            (2013, <em>Solar Physics</em> 285) &mdash; the same physics behind NOAA/ESA's operational CME-arrival
-            tools &mdash; solved for a low/best/high arrival window rather than a single number.</li>
+          <li><strong>Flare probability (Forecasting)</strong> blends a McIntosh classification + Mount Wilson
+            magnetic-class lookup table, NOAA's own issued per-region probability (shown for comparison), and a
+            Poisson "hot region" term from the region's flares-in-the-last-24h count.</li>
+          <li><strong>Nowcasting</strong> converts the live GOES long-channel X-ray flux directly into the same
+            A/B/C/M/X classification NOAA uses for flare events, plus a rising/falling trend from the raw flux
+            over the last 30 minutes &mdash; this is "what is the Sun doing right now," not a probability.</li>
+          <li><strong>CME Earth-arrival time (CME Tracker)</strong> uses the analytic Drag-Based Model of
+            Vr&scaron;nak et al. (2013, <em>Solar Physics</em> 285) &mdash; the same physics behind NOAA/ESA's
+            operational CME-arrival tools &mdash; solved for a low/best/high arrival window, and tracked as a
+            percent-complete progress bar from elapsed time vs. estimated transit time.</li>
+          <li><strong>Short-term trend forecasts</strong> (Kp, solar wind speed) are a simple linear
+            least-squares extrapolation of the last few hours of data &mdash; a naive statistical projection, not
+            a physics-based forecast. It will visibly diverge from reality whenever a CME or corotating
+            interaction region actually changes conditions.</li>
           <li><strong>Aditya-L1 cross-validation</strong> downloads real SoLEXS Level-1 X-ray light curves via
             ISRO's PRADAN portal (ISSDC) and flags which GOES-detected flares show a matching count-rate
             enhancement, as independent confirmation from a second satellite in a different orbit.</li>
@@ -319,6 +338,9 @@
           <li>Storm severity depends heavily on IMF Bz, which is only reliably knowable once a CME sheath
             reaches L1, roughly 30&ndash;60 minutes before Earth impact &mdash; a physical limit of the
             observing geometry, not a modeling gap.</li>
+          <li>The Kp/solar-wind "forecast" lines are naive linear extrapolations of recent history, included so
+            you can see where things are headed <em>if nothing changes</em> &mdash; not a substitute for the
+            physics-based CME arrival model.</li>
           <li>Aditya-L1/SoLEXS cross-validation uses raw total count rate vs. the day's median as an activity
             proxy, not a calibrated flux-to-GOES-class conversion, and Level-1 data has a multi-day publication
             latency (not real-time).</li>
@@ -348,6 +370,21 @@
 </footer>
 
 <script>
+const CHART_COLORS = { navy: '#0b2a52', saffron: '#ff9933', green: '#128807',
+  c: '#f4c542', m: '#e8703a', x: '#c0392b', muted: '#5b6b82' };
+
+// Chart.js measures its canvas at construction time. Any chart built while
+// its tab (or sub-tab) is display:none gets stuck at 0x0 and never
+// recovers on its own -- ResizeObserver doesn't reliably fire when a
+// display:none ancestor becomes visible. So every chart we create gets
+// registered here, and every tab/sub-tab switch resizes all of them; a
+// resize() on an already-correctly-sized, visible chart is a harmless
+// no-op, but it's what rescues the ones that were hidden at creation.
+const ALL_CHARTS = [];
+function resizeAllCharts() {
+  requestAnimationFrame(() => ALL_CHARTS.forEach(c => c.resize()));
+}
+
 function initTabs() {
   const buttons = document.querySelectorAll('.tab-btn');
   buttons.forEach(btn => {
@@ -356,6 +393,18 @@ function initTabs() {
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
       btn.classList.add('active');
       document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+      resizeAllCharts();
+    });
+  });
+
+  const subButtons = document.querySelectorAll('.subtab-btn');
+  subButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      subButtons.forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.subtab-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('subtab-' + btn.dataset.subtab).classList.add('active');
+      resizeAllCharts();
     });
   });
 }
@@ -383,13 +432,31 @@ async function loadReport() {
 }
 
 function pct(v) { return (v === null || v === undefined) ? '—' : v.toFixed(1) + '%'; }
+function fmtTime(t) { return t ? new Date(t).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '—'; }
+
+function gscaleColor(g) {
+  return { 'G1': '#f4c542', 'G2': '#e8703a', 'G3': '#c0392b', 'G4': '#8e1f1f', 'G5': '#5c1010' }[g] || CHART_COLORS.green;
+}
 
 function render(report) {
+  renderMetaBar(report);
+  renderOverview(report);
+  renderLiveData(report);
+  renderForecasting(report);
+  renderNowcasting(report);
+  renderCmeTracker(report);
+  renderEarthImpact(report);
+  renderAditya(report);
+}
+
+function renderMetaBar(report) {
   const metaBar = document.getElementById('meta-bar');
   metaBar.innerHTML = `<span class="pill">Generated ${new Date(report.generated_at).toLocaleString()}</span>` +
     Object.entries(report.data_sources).map(([name, src]) =>
       `<span class="pill ${src}">${name}: ${src}</span>`).join('');
+}
 
+function renderOverview(report) {
   const sw = report.solar_wind;
   document.getElementById('solar-wind-stats').innerHTML = `
     <div class="stat-row"><span class="label">Speed</span><span class="value">${sw.ambient_speed_kms ?? '—'} km/s</span></div>
@@ -408,37 +475,284 @@ function render(report) {
     <div class="stat-row"><span class="label">Sample time</span><span class="value">${geo.sample_time ?? '—'}</span></div>
   `;
 
+  const nc = report.nowcasting;
+  const ei = report.earth_impact;
+  const topRegion = report.top_flare_risk_regions[0];
+  document.getElementById('overview-summary').innerHTML = `
+    Current X-ray flux corresponds to a <strong>${nc.available ? nc.goes_class : '—'}</strong>-class level and is
+    <strong>${nc.available ? nc.trend : 'unknown'}</strong>. Geomagnetic activity is
+    <strong>${ei.current_gscale === 'none' ? 'quiet (below G-scale)' : ei.current_gscale}</strong> with Bz at
+    <strong>${ei.current_bz_nt ?? '—'} nT</strong>.
+    ${topRegion ? `The highest flare-risk region is <strong>AR${topRegion.region}</strong> (${topRegion.location}),
+    blended at ${pct(topRegion.blended_estimate_pct.M)} M-class / ${pct(topRegion.blended_estimate_pct.X)} X-class
+    in the next 24h.` : ''}
+    ${ei.next_incoming_cme ? `A CME from the ${ei.next_incoming_cme.flare_class} flare on
+    ${new Date(ei.next_incoming_cme.flare_peak_time).toLocaleDateString()} is ${ei.next_incoming_cme.percent_complete}%
+    of the way to Earth.` : 'No CME currently tracked as in-transit.'}
+  `;
+}
+
+function renderLiveData(report) {
+  const sw = report.solar_wind;
+  const nc = report.nowcasting;
+  const geo = report.geomagnetic;
+  const f107 = report.live_data.f107;
+
+  document.getElementById('live-summary-cards').innerHTML = `
+    <div class="card metric-card">
+      <div class="metric-label">Planetary Kp</div>
+      <div class="metric-value">${geo.kp_index ?? '—'}</div>
+      <div class="metric-sub">${report.earth_impact.current_gscale === 'none' ? 'Quiet' : report.earth_impact.current_gscale}</div>
+    </div>
+    <div class="card metric-card">
+      <div class="metric-label">Solar Wind Speed</div>
+      <div class="metric-value">${sw.ambient_speed_kms ?? '—'}</div>
+      <div class="metric-sub">km/s</div>
+    </div>
+    <div class="card metric-card">
+      <div class="metric-label">IMF Bz</div>
+      <div class="metric-value" style="color:${(sw.bz_gsm_nt ?? 0) < 0 ? 'var(--warn)' : 'var(--good)'}">${sw.bz_gsm_nt ?? '—'}</div>
+      <div class="metric-sub">nT (GSM)</div>
+    </div>
+    <div class="card metric-card">
+      <div class="metric-label">X-ray Flux Class</div>
+      <div class="metric-value">${nc.available ? nc.goes_class : '—'}</div>
+      <div class="metric-sub">${nc.available ? nc.trend : '—'}</div>
+    </div>
+    <div class="card metric-card">
+      <div class="metric-label">F10.7 Flux</div>
+      <div class="metric-value">${f107.flux_sfu ?? '—'}</div>
+      <div class="metric-sub">sfu</div>
+    </div>
+  `;
+
+  document.getElementById('live-solar-wind-stats').innerHTML = `
+    <div class="stat-row"><span class="label">Speed</span><span class="value">${sw.ambient_speed_kms ?? '—'} km/s</span></div>
+    <div class="stat-row"><span class="label">Density</span><span class="value">${sw.density_p_cm3 ?? '—'} p/cm³</span></div>
+    <div class="stat-row"><span class="label">Temperature</span><span class="value">${sw.temperature_k ? sw.temperature_k.toLocaleString() : '—'} K</span></div>
+    <div class="stat-row"><span class="label">IMF Bt</span><span class="value">${sw.bt_nt ?? '—'} nT</span></div>
+    <div class="stat-row"><span class="label">IMF Bz (GSM)</span><span class="value">${sw.bz_gsm_nt ?? '—'} nT</span></div>
+    <div class="stat-row"><span class="label">Sample time</span><span class="value">${sw.sample_time ?? '—'}</span></div>
+    <div class="stat-row"><span class="label">F10.7 sample time</span><span class="value">${f107.sample_time ?? '—'}</span></div>
+  `;
+
+  const history = report.live_data.solar_wind_history;
+  const trend = report.forecast_trends.solar_wind_speed;
+  const historyLabels = history.map(h => fmtTime(h.time));
+  const historyData = history.map(h => h.proton_speed);
+  const forecastLabels = trend.available ? trend.forecast.map(f => fmtTime(f.time)) : [];
+  const forecastData = trend.available ? trend.forecast.map(f => f.value) : [];
+
+  ALL_CHARTS.push(new Chart(document.getElementById('chart-wind-speed'), {
+    type: 'line',
+    data: {
+      labels: [...historyLabels, ...forecastLabels],
+      datasets: [
+        {
+          label: 'Observed speed (km/s)',
+          data: [...historyData, ...Array(forecastData.length).fill(null)],
+          borderColor: CHART_COLORS.navy, backgroundColor: 'rgba(11,42,82,0.08)',
+          fill: true, tension: 0.25, pointRadius: 0, borderWidth: 2,
+        },
+        {
+          label: 'Naive trend projection',
+          data: [...Array(historyData.length - 1).fill(null), historyData[historyData.length - 1], ...forecastData],
+          borderColor: CHART_COLORS.saffron, borderDash: [6, 4],
+          fill: false, tension: 0.1, pointRadius: 0, borderWidth: 2,
+        },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } },
+      scales: { x: { ticks: { maxTicksLimit: 10, font: { size: 10 } } }, y: { title: { display: true, text: 'km/s' } } },
+    },
+  }));
+}
+
+function renderForecasting(report) {
   const regionBody = document.querySelector('#region-table tbody');
   regionBody.innerHTML = report.top_flare_risk_regions.map(r => {
     const b = r.blended_estimate_pct, n = r.noaa_official_pct;
     const bar = (val, cls) => `<div class="bar-cell"><div class="bar-track"><div class="bar-fill ${cls}" style="width:${Math.min(100, val || 0)}%"></div></div><span>${pct(val)}</span></div>`;
     return `<tr>
-      <td>AR${r.region}</td>
-      <td>${r.location}</td>
-      <td>${r.spot_class ?? '—'}</td>
-      <td>${r.mag_class ?? '—'}</td>
+      <td>AR${r.region}</td><td>${r.location}</td><td>${r.spot_class ?? '—'}</td><td>${r.mag_class ?? '—'}</td>
       <td>${bar(b.C, 'c')}<div class="noaa-compare">NOAA: ${n.C}%</div></td>
       <td>${bar(b.M, 'm')}<div class="noaa-compare">NOAA: ${n.M}%</div></td>
       <td>${bar(b.X, 'x')}<div class="noaa-compare">NOAA: ${n.X}%</div></td>
     </tr>`;
   }).join('');
 
-  const cmeBody = document.querySelector('#cme-table tbody');
-  cmeBody.innerHTML = report.recent_mx_flares_cme_arrival.map(c => {
-    const a = c.arrival;
-    const window = a.transit_hours_best !== null
-      ? `${a.transit_hours_best}h [${a.transit_hours_low}–${a.transit_hours_high}h]`
-      : (a.note || 'no solution');
-    return `<tr>
-      <td>${c.flare_class}</td>
-      <td>${c.flare_peak_time}</td>
-      <td>${c.estimated_cme_speed_kms ?? '—'} km/s</td>
-      <td>${window}</td>
-      <td>${a.arrival_speed_kms ?? '—'} km/s</td>
-      <td><span class="outlook-tag">${c.geomagnetic_outlook}</span></td>
-    </tr>`;
-  }).join('');
+  const regions = report.top_flare_risk_regions;
+  ALL_CHARTS.push(new Chart(document.getElementById('chart-region-probability'), {
+    type: 'bar',
+    data: {
+      labels: regions.map(r => `AR${r.region}`),
+      datasets: [
+        { label: 'C-class %', data: regions.map(r => r.blended_estimate_pct.C), backgroundColor: CHART_COLORS.c },
+        { label: 'M-class %', data: regions.map(r => r.blended_estimate_pct.M), backgroundColor: CHART_COLORS.m },
+        { label: 'X-class %', data: regions.map(r => r.blended_estimate_pct.X), backgroundColor: CHART_COLORS.x },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom' } },
+      scales: { y: { beginAtZero: true, max: 100, title: { display: true, text: '24h probability (%)' } } },
+    },
+  }));
+}
 
+function renderNowcasting(report) {
+  const nc = report.nowcasting;
+  if (!nc.available) {
+    document.getElementById('nowcast-cards').innerHTML = `<div class="card wide">Nowcasting data not available.</div>`;
+    return;
+  }
+  document.getElementById('nowcast-cards').innerHTML = `
+    <div class="card metric-card">
+      <div class="metric-label">Current Flux Class</div>
+      <div class="metric-value">${nc.goes_class}</div>
+      <div class="metric-sub">long channel 0.1&ndash;0.8nm</div>
+    </div>
+    <div class="card metric-card">
+      <div class="metric-label">Raw Flux</div>
+      <div class="metric-value" style="font-size:1.1rem;">${nc.flux_w_m2.toExponential(2)}</div>
+      <div class="metric-sub">W/m&sup2;</div>
+    </div>
+    <div class="card metric-card">
+      <div class="metric-label">30-min Trend</div>
+      <div class="metric-value" style="text-transform:capitalize;">${nc.trend}</div>
+      <div class="metric-sub">${nc.trend_change_pct > 0 ? '+' : ''}${nc.trend_change_pct}%</div>
+    </div>
+    <div class="card metric-card">
+      <div class="metric-label">Sample Time</div>
+      <div class="metric-value" style="font-size:1.1rem;">${fmtTime(nc.sample_time)}</div>
+      <div class="metric-sub">UTC</div>
+    </div>
+  `;
+
+  const series = nc.series;
+  ALL_CHARTS.push(new Chart(document.getElementById('chart-xray-flux'), {
+    type: 'line',
+    data: {
+      labels: series.map(s => fmtTime(s.time)),
+      datasets: [{
+        label: 'Long-channel flux (W/m²)', data: series.map(s => s.flux),
+        borderColor: CHART_COLORS.x, backgroundColor: 'rgba(192,57,43,0.08)',
+        fill: true, tension: 0.15, pointRadius: 0, borderWidth: 1.5,
+      }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { maxTicksLimit: 8, font: { size: 10 } } },
+        y: {
+          type: 'logarithmic', min: 1e-8, max: 1e-3,
+          title: { display: true, text: 'W/m² (log scale)' },
+          ticks: {
+            callback: v => {
+              const map = { 0.00000001: 'A', 0.0000001: 'B', 0.000001: 'C', 0.00001: 'M', 0.0001: 'X' };
+              return map[v] || '';
+            },
+          },
+        },
+      },
+    },
+  }));
+}
+
+function renderCmeTracker(report) {
+  const cmes = report.recent_mx_flares_cme_arrival;
+  document.getElementById('cme-tracker-cards').innerHTML = cmes.map(c => {
+    const a = c.arrival;
+    if (a.transit_hours_best === null) {
+      return `<div class="cme-card"><div class="cme-card-head">
+        <strong>${c.flare_class}</strong> @ ${new Date(c.flare_peak_time).toLocaleString()}
+        <span class="badge transit">No solution</span></div>
+        <div style="font-size:0.85rem; color:var(--muted);">${a.note || 'CME too slow relative to ambient wind.'}</div></div>`;
+    }
+    const badge = c.arrived
+      ? `<span class="badge arrived">✓ Arrived</span>`
+      : `<span class="badge transit">In transit</span>`;
+    return `<div class="cme-card">
+      <div class="cme-card-head">
+        <div><strong>${c.flare_class}</strong> flare @ ${new Date(c.flare_peak_time).toLocaleString()}
+          &mdash; est. CME v&#8320;=${c.estimated_cme_speed_kms} km/s</div>
+        ${badge}
+      </div>
+      <div class="cme-progress-track">
+        <div class="cme-progress-fill" style="width:${c.percent_complete}%"></div>
+      </div>
+      <div class="cme-progress-icons"><span>&#9728; Sun</span><span>${c.percent_complete}% complete</span><span>&#127760; Earth</span></div>
+      <div style="font-size:0.82rem; color:var(--muted); margin-top:8px;">
+        Arrival window: ${a.transit_hours_best}h [${a.transit_hours_low}&ndash;${a.transit_hours_high}h] &middot;
+        Arrival speed ~${a.arrival_speed_kms} km/s &middot; Elapsed: ${c.elapsed_hours}h
+      </div>
+      <div style="margin-top:6px;"><span class="outlook-tag">${c.geomagnetic_outlook}</span></div>
+    </div>`;
+  }).join('');
+}
+
+function renderEarthImpact(report) {
+  const ei = report.earth_impact;
+  const gColor = ei.current_gscale === 'none' ? CHART_COLORS.green : gscaleColor(ei.current_gscale);
+
+  document.getElementById('earth-impact-stats').innerHTML = `
+    <div class="stat-row"><span class="label">Current Kp</span><span class="value">${ei.current_kp ?? '—'}</span></div>
+    <div class="stat-row"><span class="label">NOAA G-scale</span><span class="value" style="color:${gColor}">${ei.current_gscale === 'none' ? 'None (quiet)' : ei.current_gscale}</span></div>
+    <div class="stat-row"><span class="label">IMF Bz (GSM)</span><span class="value">${ei.current_bz_nt ?? '—'} nT</span></div>
+    <div class="gauge-track">
+      ${['#128807','#128807','#128807','#128807','#f4c542','#e8703a','#c0392b','#8e1f1f','#5c1010'].map((c,i) =>
+        `<div class="gauge-seg" style="width:${100/9}%;background:${c};opacity:${i < (ei.current_kp ?? 0) ? 1 : 0.18}"></div>`
+      ).join('')}
+    </div>
+    <div class="gauge-scale-labels"><span>Kp 0</span><span>5 (G1)</span><span>9 (G5)</span></div>
+  `;
+
+  const next = ei.next_incoming_cme;
+  document.getElementById('earth-impact-incoming').innerHTML = next ? `
+    <div class="stat-row"><span class="label">Source flare</span><span class="value">${next.flare_class}</span></div>
+    <div class="stat-row"><span class="label">Peak time</span><span class="value">${new Date(next.flare_peak_time).toLocaleString()}</span></div>
+    <div class="stat-row"><span class="label">Progress</span><span class="value">${next.percent_complete}%</span></div>
+    <div class="stat-row"><span class="label">Est. arrival speed</span><span class="value">${next.arrival.arrival_speed_kms ?? '—'} km/s</span></div>
+    <div class="stat-row"><span class="label">Outlook</span><span class="value">${next.geomagnetic_outlook}</span></div>
+  ` : `<div style="color:var(--muted); font-size:0.9rem;">No CME currently tracked as in-transit toward Earth.</div>`;
+
+  const kpHistory = report.live_data.kp_history;
+  const kpTrend = report.forecast_trends.kp;
+  const historyLabels = kpHistory.map(h => fmtTime(h.time));
+  const historyData = kpHistory.map(h => h.kp_index);
+  const forecastLabels = kpTrend.available ? kpTrend.forecast.map(f => fmtTime(f.time)) : [];
+  const forecastData = kpTrend.available ? kpTrend.forecast.map(f => f.value) : [];
+
+  ALL_CHARTS.push(new Chart(document.getElementById('chart-kp-trend'), {
+    type: 'line',
+    data: {
+      labels: [...historyLabels, ...forecastLabels],
+      datasets: [
+        {
+          label: 'Observed Kp', data: [...historyData, ...Array(forecastData.length).fill(null)],
+          borderColor: CHART_COLORS.navy, backgroundColor: 'rgba(11,42,82,0.08)',
+          fill: true, stepped: true, pointRadius: 0, borderWidth: 2,
+        },
+        {
+          label: 'Naive trend projection',
+          data: [...Array(historyData.length - 1).fill(null), historyData[historyData.length - 1], ...forecastData],
+          borderColor: CHART_COLORS.saffron, borderDash: [6, 4],
+          fill: false, pointRadius: 0, borderWidth: 2,
+        },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom' } },
+      scales: { x: { ticks: { maxTicksLimit: 10, font: { size: 10 } } }, y: { min: 0, max: 9, title: { display: true, text: 'Kp index' } } },
+    },
+  }));
+}
+
+function renderAditya(report) {
   const av = report.aditya_l1_cross_validation.summary;
   const avSummaryEl = document.getElementById('aditya-summary');
   const avBody = document.querySelector('#aditya-table tbody');
